@@ -1,7 +1,7 @@
 name: Build APK from Zip
 on:
   push:
-    paths: ['DuaaWaZiyara-android.zip']
+    paths: ['**.zip']
   workflow_dispatch:
 
 jobs:
@@ -13,7 +13,15 @@ jobs:
         with: { distribution: temurin, java-version: '17' }
       - uses: android-actions/setup-android@v3
       - name: Unzip project
-        run: unzip -q DuaaWaZiyara-android.zip
+        run: |
+          ls -la
+          ZIP=$(ls *.zip 2>/dev/null | head -1)
+          if [ -z "$ZIP" ]; then
+            echo "::error::No .zip in repo root. Upload DuaaWaZiyara-android.zip first."
+            exit 1
+          fi
+          echo "Building from: $ZIP"
+          unzip -q "$ZIP"
       - name: Wrapper jar (if missing)
         working-directory: android
         run: |
