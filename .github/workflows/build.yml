@@ -47,14 +47,23 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --console=plain --stacktrace --no-daemon
-          echo "===== APK OUTPUT ====="
-          ls -la app/build/outputs/apk/debug/
+          set +e
+          ./gradlew assembleDebug --console=plain --stacktrace --no-daemon --info > build.log 2>&1
+          echo "EXIT=$?"
+          echo "===== ERROR LINES ====="
+          grep -n "^e: \|FAILURE\|Caused by\|Exception\|error:\|OutOfMemory\|Metaspace\|Killed\|daemon" build.log | tail -40
+          echo "===== LAST 80 LINES ====="
+          tail -80 build.log
+          echo "===== APK ====="
+          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "no apk dir"
+          exit 0
 
-      - name: Upload APK
+      - name: Upload everything
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: build-output
+          path: |
+            android/build.log
+            android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
