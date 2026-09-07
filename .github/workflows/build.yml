@@ -16,49 +16,36 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Verify compiler present
-        run: java -version && javac -version
-
       - uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
 
       - name: Unzip project
         run: |
-          ls -la
           ZIP=$(ls *.zip 2>/dev/null | head -1)
-          if [ -z "$ZIP" ]; then
-            echo "::error::No .zip found in repo root. Upload DuaaWaZiyara-android.zip first."
-            exit 1
-          fi
+          if [ -z "$ZIP" ]; then echo "::error::No .zip in repo root."; exit 1; fi
           echo "Building from: $ZIP"
           unzip -q "$ZIP"
-
-      - name: Restore Gradle wrapper jar
-        working-directory: android
-        run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            mkdir -p /tmp/w
-            cd /tmp/w
-            touch settings.gradle.kts
-            gradle wrapper --gradle-version 8.11.1
-            cp /tmp/w/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/"
-          fi
 
       - name: Build debug APK
         working-directory: android
         run: |
-          chmod +x gradlew
+          gradle --version
           set +e
-          ./gradlew assembleDebug --console=plain --stacktrace --no-daemon --info > build.log 2>&1
+          gradle assembleDebug --console=plain --stacktrace > build.log 2>&1
           echo "EXIT=$?"
-          echo "===== ERROR LINES ====="
-          grep -n "^e: \|FAILURE\|Caused by\|Exception\|error:\|OutOfMemory\|Metaspace\|Killed\|daemon" build.log | tail -40
-          echo "===== LAST 80 LINES ====="
-          tail -80 build.log
+          echo "===== ERRORS ====="
+          grep -n "^e: \|FAILURE\|Caused by\|error:" build.log | tail -30
+          echo "===== LAST 40 LINES ====="
+          tail -40 build.log
           echo "===== APK ====="
           ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "no apk dir"
           exit 0
 
-      - name: Upload everything
+      - name: Upload output
         if: always()
         uses: actions/upload-artifact@v4
         with:
