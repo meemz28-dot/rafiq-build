@@ -43,22 +43,19 @@ jobs:
             cp /tmp/w/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/"
             ls -la "$GITHUB_WORKSPACE/android/gradle/wrapper/"
           fi
-      - name: Build debug APK
+          
+           - name: Build debug APK
         working-directory: android
         run: |
           chmod +x gradlew
-          set +e
-          ./gradlew compileDebugKotlin --console=plain --stacktrace --no-daemon > build.log 2>&1
-          echo "exit=$?"
-          echo "===== ERROR LINES ====="
-          grep -n "^e: \|^w: \|FAILURE\|Caused by\|Exception\|error:\|OutOfMemory\|Daemon" build.log | head -60
-          echo "===== LAST 120 LINES ====="
-          tail -120 build.log
-          exit 0
+          ./gradlew assembleDebug --console=plain --stacktrace --no-daemon
+          echo "===== APK OUTPUT ====="
+          ls -la app/build/outputs/apk/debug/
 
-      - name: Upload full build log
+      - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
-          path: android/build.log
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
