@@ -68,3 +68,55 @@ jobs:
           git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
           git add rafiq-debug.apk && git commit -q -m "Debug APK from ${GITHUB_SHA::7}"
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" apk-out
+
+  screens:
+    # Captures every page of the debug build on an emulator, for design review. Pushed to apk-out/screens.
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Fetch the APK
+        run: git clone -q --depth 1 -b apk-out "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" out
+      - name: Write capture script
+        run: |
+          cat > shots.sh <<'SH'
+          set -x
+          adb install -r out/rafiq-debug.apk
+          mkdir -p shots
+          adb shell pm grant com.shirazi.duaa android.permission.POST_NOTIFICATIONS || true
+          adb shell pm grant com.shirazi.duaa android.permission.ACCESS_FINE_LOCATION || true
+          shot() { n=$1; th=$2; shift 2
+            adb shell am force-stop com.shirazi.duaa
+            adb shell am start -W -n com.shirazi.duaa/.MainActivity --ez skip_onboarding true --es theme $th "$@" >/dev/null
+            sleep 6; adb exec-out screencap -p > shots/$n.png; }
+          for t in home lib prayer cal more; do shot tab-$t light --es tab $t; done
+          for s in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints; do shot screen-$s light --es screen $s; done
+          for s in tasbih fav settings about; do shot sheet-$s light --es sheet $s; done
+          shot reader-kumayl light --es reader mashhura/m-kumayl
+          shot reader-quran light --es reader quran/q-001
+          shot reader-kafi light --es reader kafi-dua/kf2-1
+          shot dark-home dark --es tab home
+          shot dark-khira dark --es screen khira
+          shot dark-reader dark --es reader mashhura/m-kumayl
+          shot dark-lib dark --es tab lib
+          ls -la shots
+          SH
+      - name: Capture pages
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          disable-animations: true
+          script: bash shots.sh
+      - name: Publish screenshots to apk-out
+        run: |
+          cd out && mkdir -p screens && cp ../shots/*.png screens/
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add screens && git commit -q -m "Page screenshots ${GITHUB_SHA::7}" && git push -q origin apk-out
