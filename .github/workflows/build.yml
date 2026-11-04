@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -56,3 +58,13 @@ jobs:
             android/build.log
             android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
+
+      - name: Publish APK to the apk-out branch (easy to fetch with git)
+        if: hashFiles('android/app/build/outputs/apk/debug/app-debug.apk') != ''
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk /tmp/rafiq-debug.apk
+          mkdir /tmp/out && cd /tmp/out && git init -q -b apk-out
+          cp /tmp/rafiq-debug.apk .
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add rafiq-debug.apk && git commit -q -m "Debug APK from ${GITHUB_SHA::7}"
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" apk-out
