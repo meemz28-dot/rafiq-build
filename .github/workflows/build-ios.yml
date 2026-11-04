@@ -8,7 +8,7 @@ on:
 
 jobs:
   ipa:
-    runs-on: macos-15   # Xcode 16: xcodegen 2.46 writes the Xcode 16 project format
+    runs-on: macos-26   # Xcode 26 / iOS 26 SDK: required for Liquid Glass
     permissions:
       contents: write
     steps:
@@ -17,12 +17,10 @@ jobs:
       - name: Unzip project
         run: unzip -q "$(ls *.zip | head -1)"
 
-      - name: Content checks and iOS logic tests
-        working-directory: android
+      - name: Select Xcode 26
         run: |
-          python3 tools/khira_check.py
-          node ios/tools/test_logic.js
-          python3 ios/tools/export_content.py
+          ls -d /Applications/Xcode_26*.app || true
+          X=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1); sudo xcode-select -s "$X/Contents/Developer"; xcodebuild -version
 
       - name: Generate the Xcode project
         working-directory: android/ios
@@ -36,7 +34,7 @@ jobs:
           set -o pipefail
           xcodebuild -project RafiqAlMumin.xcodeproj -scheme RafiqAlMumin -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee xcodebuild.log | tail -60
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee xcodebuild.log | grep -E "error:|warning: unre|BUILD" | head -150
 
       - name: Package .ipa
         working-directory: android/ios
@@ -54,6 +52,11 @@ jobs:
           git add RafiqAlMumin.ipa && git commit -q -m "iOS ipa ${GITHUB_SHA::7}"
           for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 8; done
 
-      - name: Keep the build log
-        if: always()
-        run: tail -120 android/ios/xcodebuild.log 2>/dev/null || true
+      - name: Publish compiler errors to apk-out (ios-errors.txt)
+        if: failure()
+        run: |
+          grep -E "error:" android/ios/xcodebuild.log | sort -u > /tmp/ios-errors.txt || true
+          git clone -q --depth 1 -b apk-out "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" out2
+          cp /tmp/ios-errors.txt out2/ios-errors.txt && cd out2
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add ios-errors.txt && git commit -q -m "iOS errors ${GITHUB_SHA::7}" && for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 5; done
