@@ -119,4 +119,5 @@ jobs:
         run: |
           cd out && mkdir -p screens && cp ../shots/*.png screens/
           git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
-          git add screens && git commit -q -m "Page screenshots ${GITHUB_SHA::7}" && git push -q origin apk-out
+          git add screens && git commit -q -m "Page screenshots ${GITHUB_SHA::7}"
+          for i in 1 2 3; do git pull -q --rebase origin apk-out && git push -q origin apk-out && break; sleep 5; done

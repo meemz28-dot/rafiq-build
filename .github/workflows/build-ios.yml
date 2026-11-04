@@ -52,7 +52,7 @@ jobs:
           cp android/ios/RafiqAlMumin.ipa out/
           cd out && git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
           git add RafiqAlMumin.ipa && git commit -q -m "iOS ipa ${GITHUB_SHA::7}"
-          git push -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" apk-out
+          for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 8; done
 
       - name: Keep the build log
         if: always()
