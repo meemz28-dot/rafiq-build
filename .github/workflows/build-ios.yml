@@ -52,6 +52,42 @@ jobs:
           git add RafiqAlMumin.ipa && git commit -q -m "iOS ipa ${GITHUB_SHA::7}"
           for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 8; done
 
+      - name: Simulator screenshots (iOS 26)
+        working-directory: android/ios
+        run: |
+          set -x
+          xcodebuild -project RafiqAlMumin.xcodeproj -scheme RafiqAlMumin -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath simbuild CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E "error:|BUILD" | head -40
+          APP=$(find simbuild/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "*.app" | head -1)
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; c=[(k,x) for k,v in d.items() if 'iOS-26' in k for x in v if x['name'].startswith('iPhone') and 'Pro' in x['name'] and 'Max' not in x['name']]; print(sorted(c)[-1][1]['udid'] if c else '')")
+          test -n "$UDID" || UDID=$(xcrun simctl list devices available | grep -m1 -oE "iPhone [^(]+\(([0-9A-F-]{36})\)" | grep -oE "[0-9A-F-]{36}")
+          xcrun simctl boot "$UDID" || true; xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          xcrun simctl install "$UDID" "$APP"
+          mkdir -p shots
+          shot() { n=$1; shift; xcrun simctl terminate "$UDID" com.shirazi.rafiq 2>/dev/null; xcrun simctl launch "$UDID" com.shirazi.rafiq -onboarded YES "$@" >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot "shots/$n.png" >/dev/null 2>&1 || echo "no shot $n"; }
+          xcrun simctl launch "$UDID" com.shirazi.rafiq >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot shots/onboarding.png
+          for t in home library prayer calendar more; do shot tab-$t -debugTab $t; done
+          for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints; do shot tool-$t -debugTool $t; done
+          for t in tasbih favorites bookmarks settings about location method; do shot sheet-$t -debugSheet $t; done
+          shot reader-kumayl -debugReader mashhura/m-kumayl
+          shot reader-quran -debugReader quran/q-001
+          shot category-sahifa -debugCategory sahifa
+          xcrun simctl ui "$UDID" appearance dark
+          shot dark-home -debugTab home
+          shot dark-tasbih -debugSheet tasbih
+          shot dark-reader -debugReader mashhura/m-kumayl
+          ls shots | wc -l
+          ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i rafiq || echo "no crash reports"
+          for f in ~/Library/Logs/DiagnosticReports/RafiqAlMumin*; do [ -f "$f" ] && head -60 "$f"; done || true
+
+      - name: Publish simulator screenshots to apk-out (ios-screens/)
+        run: |
+          rm -rf out3 && git clone -q --depth 1 -b apk-out "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" out3
+          rm -rf out3/ios-screens && mkdir -p out3/ios-screens && cp android/ios/shots/*.png out3/ios-screens/ && cd out3
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add -A ios-screens && git commit -q -m "iOS screenshots ${GITHUB_SHA::7}" && for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 5; done
+
       - name: Publish compiler errors to apk-out (ios-errors.txt)
         if: failure()
         run: |
