@@ -63,11 +63,11 @@ jobs:
         if: hashFiles('android/app/build/outputs/apk/debug/app-debug.apk') != ''
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk /tmp/rafiq-debug.apk
-          mkdir /tmp/out && cd /tmp/out && git init -q -b apk-out
-          cp /tmp/rafiq-debug.apk .
+          git clone -q --depth 1 -b apk-out "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" /tmp/out || (mkdir /tmp/out && cd /tmp/out && git init -q -b apk-out)
+          cd /tmp/out && cp /tmp/rafiq-debug.apk .
           git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
           git add rafiq-debug.apk && git commit -q -m "Debug APK from ${GITHUB_SHA::7}"
-          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" apk-out
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" apk-out
 
   screens:
     # Captures every page of the debug build on an emulator, for design review. Pushed to apk-out/screens.
@@ -88,11 +88,11 @@ jobs:
           set -x
           adb install -r out/rafiq-debug.apk
           mkdir -p shots
-          adb shell pm grant com.shirazi.duaa android.permission.POST_NOTIFICATIONS || true
-          adb shell pm grant com.shirazi.duaa android.permission.ACCESS_FINE_LOCATION || true
+          adb shell pm grant com.shirazi.duaa.debug android.permission.POST_NOTIFICATIONS || true
+          adb shell pm grant com.shirazi.duaa.debug android.permission.ACCESS_FINE_LOCATION || true
           shot() { n=$1; th=$2; shift 2
-            adb shell am force-stop com.shirazi.duaa
-            adb shell am start -W -n com.shirazi.duaa/.MainActivity --ez skip_onboarding true --es theme $th "$@" >/dev/null
+            adb shell am force-stop com.shirazi.duaa.debug
+            adb shell am start -W -n com.shirazi.duaa.debug/com.shirazi.duaa.MainActivity --ez skip_onboarding true --es theme $th "$@" >/dev/null
             sleep 6; adb exec-out screencap -p > shots/$n.png; }
           for t in home lib prayer cal more; do shot tab-$t light --es tab $t; done
           for s in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints; do shot screen-$s light --es screen $s; done
@@ -105,6 +105,7 @@ jobs:
           shot dark-reader dark --es reader mashhura/m-kumayl
           shot dark-lib dark --es tab lib
           ls -la shots
+          adb logcat -d | grep -E "FATAL|AndroidRuntime" | head -40 || true
           SH
       - name: Capture pages
         uses: reactivecircus/android-emulator-runner@v2
