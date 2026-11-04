@@ -8,7 +8,7 @@ on:
 
 jobs:
   ipa:
-    runs-on: macos-14
+    runs-on: macos-15   # Xcode 16: xcodegen 2.46 writes the Xcode 16 project format
     permissions:
       contents: write
     steps:
