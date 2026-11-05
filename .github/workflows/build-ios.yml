@@ -65,7 +65,7 @@ jobs:
           xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 || true
           xcrun simctl install "$UDID" "$APP"
           mkdir -p shots
-          shot() { n=$1; shift; xcrun simctl terminate "$UDID" com.shirazi.rafiq 2>/dev/null; xcrun simctl launch "$UDID" com.shirazi.rafiq -onboarded YES "$@" >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot "shots/$n.png" >/dev/null 2>&1 || echo "no shot $n"; }
+          shot() { n=$1; shift; xcrun simctl terminate "$UDID" com.shirazi.rafiq 2>/dev/null || true; xcrun simctl launch "$UDID" com.shirazi.rafiq -onboarded YES "$@" >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot "shots/$n.png" >/dev/null 2>&1 || echo "no shot $n"; }
           xcrun simctl launch "$UDID" com.shirazi.rafiq >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot shots/onboarding.png
           for t in home library prayer calendar more; do shot tab-$t -debugTab $t; done
           for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints shrine listen; do shot tool-$t -debugTool $t; done
