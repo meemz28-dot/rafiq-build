@@ -68,11 +68,13 @@ jobs:
           shot() { n=$1; shift; xcrun simctl terminate "$UDID" com.shirazi.rafiq 2>/dev/null; xcrun simctl launch "$UDID" com.shirazi.rafiq -onboarded YES "$@" >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot "shots/$n.png" >/dev/null 2>&1 || echo "no shot $n"; }
           xcrun simctl launch "$UDID" com.shirazi.rafiq >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot shots/onboarding.png
           for t in home library prayer calendar more; do shot tab-$t -debugTab $t; done
-          for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints; do shot tool-$t -debugTool $t; done
+          for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints shrine listen; do shot tool-$t -debugTool $t; done
           for t in tasbih favorites bookmarks settings about location method; do shot sheet-$t -debugSheet $t; done
           shot reader-kumayl -debugReader mashhura/m-kumayl
           shot reader-quran -debugReader quran/q-001
           shot category-sahifa -debugCategory sahifa
+          shot listen-kumayl -debugListen "كميل"; sleep 6; xcrun simctl io "$UDID" screenshot shots/listen-kumayl-late.png >/dev/null 2>&1 || true
+          shot listen-kahf -debugListen "الكهف"; sleep 6; xcrun simctl io "$UDID" screenshot shots/listen-kahf-late.png >/dev/null 2>&1 || true
           xcrun simctl ui "$UDID" appearance dark
           shot dark-home -debugTab home
           shot dark-tasbih -debugSheet tasbih
