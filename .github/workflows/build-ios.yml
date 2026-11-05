@@ -73,8 +73,8 @@ jobs:
           shot reader-kumayl -debugReader mashhura/m-kumayl
           shot reader-quran -debugReader quran/q-001
           shot category-sahifa -debugCategory sahifa
-          shot listen-kumayl -debugListen "كميل"; sleep 6; xcrun simctl io "$UDID" screenshot shots/listen-kumayl-late.png >/dev/null 2>&1 || true
-          shot listen-kahf -debugListen "الكهف"; sleep 6; xcrun simctl io "$UDID" screenshot shots/listen-kahf-late.png >/dev/null 2>&1 || true
+          shot listen-dua -debugListen "دعاء"; sleep 14; xcrun simctl io "$UDID" screenshot shots/listen-dua-late.png >/dev/null 2>&1 || true
+          shot listen-kumail -debugListen "kumail"; sleep 14; xcrun simctl io "$UDID" screenshot shots/listen-kumail-late.png >/dev/null 2>&1 || true
           xcrun simctl ui "$UDID" appearance dark
           shot dark-home -debugTab home
           shot dark-tasbih -debugSheet tasbih
