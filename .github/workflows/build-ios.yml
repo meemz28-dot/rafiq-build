@@ -3,6 +3,11 @@
 name: Build iOS IPA
 on:
   workflow_dispatch:
+    inputs:
+      shots:
+        description: "Also take simulator screenshots (about doubles the macOS minutes)"
+        type: boolean
+        default: false
   push:
     paths: ['**.zip']
 
@@ -53,6 +58,7 @@ jobs:
           for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 8; done
 
       - name: Simulator screenshots (iOS 26)
+        if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') }}
         working-directory: android/ios
         run: |
           set -x
@@ -101,6 +107,7 @@ jobs:
           for f in ~/Library/Logs/DiagnosticReports/RafiqAlMumin*; do [ -f "$f" ] && head -60 "$f"; done || true
 
       - name: Publish simulator screenshots to apk-out (ios-screens/)
+        if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') }}
         run: |
           rm -rf out3 && git clone -q --depth 1 -b apk-out "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" out3
           rm -rf out3/ios-screens && mkdir -p out3/ios-screens && cp android/ios/shots/*.png out3/ios-screens/ && cd out3
