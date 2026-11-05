@@ -1,1 +1,0 @@
-/Users/runner/work/rafiq-build/rafiq-build/android/ios/Rafiq/Audio/ListenView.swift:517:40: error: value of type 'DuaaCategory' has no member 'title'
