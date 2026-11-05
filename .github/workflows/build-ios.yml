@@ -67,16 +67,16 @@ jobs:
           mkdir -p shots
           shot() { n=$1; shift; xcrun simctl terminate "$UDID" com.shirazi.rafiq 2>/dev/null || true; xcrun simctl launch "$UDID" com.shirazi.rafiq -onboarded YES "$@" >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot "shots/$n.png" >/dev/null 2>&1 || echo "no shot $n"; }
           xcrun simctl launch "$UDID" com.shirazi.rafiq >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot shots/onboarding.png
-          for t in home library prayer calendar more; do shot tab-$t -debugTab $t; done
-          for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints shrine listen; do shot tool-$t -debugTool $t; done
+          for t in home library listen prayer more; do shot tab-$t -debugTab $t; done
+          for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints shrine calendar; do shot tool-$t -debugTool $t; done
           for t in tasbih favorites bookmarks settings about location method; do shot sheet-$t -debugSheet $t; done
           shot reader-kumayl -debugReader mashhura/m-kumayl
           shot reader-quran -debugReader quran/q-001
           shot category-sahifa -debugCategory sahifa
           shot listen-dua -debugListen "دعاء"; sleep 14; xcrun simctl io "$UDID" screenshot shots/listen-dua-late.png >/dev/null 2>&1 || true
           shot tab-library-q -debugTab library; shot listen-kumail -debugListen "kumail"; sleep 14; xcrun simctl io "$UDID" screenshot shots/listen-kumail-late.png >/dev/null 2>&1 || true
-          shot home-personal -debugTab home -personalOccasions '[{"id":"a1","name":"الوالد رحمه الله","kind":"death","month":5,"day":25,"year":1440,"remind":true,"daysBefore":1,"note":""},{"id":"a2","name":"ميلاد علي","kind":"birth","month":7,"day":13,"remind":true,"daysBefore":1,"note":""},{"id":"a3","name":"نذر زيارة","kind":"vow","month":9,"day":1,"remind":true,"daysBefore":3,"note":""}]'
-          shot calendar-personal -debugTab calendar -personalOccasions '[{"id":"a1","name":"الوالد رحمه الله","kind":"death","month":5,"day":25,"year":1440,"remind":true,"daysBefore":1,"note":""},{"id":"a2","name":"ميلاد علي","kind":"birth","month":7,"day":13,"remind":true,"daysBefore":1,"note":""},{"id":"a3","name":"نذر زيارة","kind":"vow","month":9,"day":1,"remind":true,"daysBefore":3,"note":""}]'
+          shot home-personal -debugTab home -debugSeedPersonal YES
+          shot calendar-personal -debugTool calendar -debugSeedPersonal YES
           xcrun simctl ui "$UDID" appearance dark
           shot dark-home -debugTab home
           shot dark-tasbih -debugSheet tasbih
@@ -89,11 +89,11 @@ jobs:
             xcrun simctl boot "$UDID" || true; xcrun simctl bootstatus "$UDID" -b
             xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 || true
             xcrun simctl install "$UDID" "$APP"
-            shot ipad-home -debugTab home -personalOccasions '[{"id":"a1","name":"الوالد رحمه الله","kind":"death","month":5,"day":25,"year":1440,"remind":true,"daysBefore":1,"note":""},{"id":"a2","name":"ميلاد علي","kind":"birth","month":7,"day":13,"remind":true,"daysBefore":1,"note":""},{"id":"a3","name":"نذر زيارة","kind":"vow","month":9,"day":1,"remind":true,"daysBefore":3,"note":""}]'
+            shot ipad-home -debugTab home -debugSeedPersonal YES
             shot ipad-library -debugTab library
             shot ipad-more -debugTab more
             shot ipad-reader -debugReader mashhura/m-kumayl
-            shot ipad-calendar -debugTab calendar
+            shot ipad-calendar -debugTool calendar
             xcrun simctl ui "$UDID" appearance light || true
           fi
           ls shots | wc -l
