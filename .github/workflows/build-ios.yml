@@ -85,6 +85,8 @@ jobs:
           shot listen-dua -debugListen "دعاء"; sleep 14; xcrun simctl io "$UDID" screenshot shots/listen-dua-late.png >/dev/null 2>&1 || true
           shot tab-library-q -debugTab library; shot listen-kumail -debugListen "kumail"; sleep 14; xcrun simctl io "$UDID" screenshot shots/listen-kumail-late.png >/dev/null 2>&1 || true
           shot home-personal -debugTab home -debugSeedPersonal YES
+          shot simple-home -debugTab home -simpleMode YES
+          shot simple-library -debugTab library -simpleMode YES
           shot calendar-personal -debugTool calendar -debugSeedPersonal YES
           xcrun simctl ui "$UDID" appearance dark
           shot dark-home -debugTab home
