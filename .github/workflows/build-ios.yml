@@ -58,6 +58,8 @@ jobs:
           for i in 1 2 3; do git pull -q --rebase origin apk-out; git push -q origin apk-out && break; sleep 8; done
 
       - name: Simulator screenshots (iOS 26)
+        timeout-minutes: 35
+        continue-on-error: true
         if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') }}
         working-directory: android/ios
         run: |
@@ -127,8 +129,12 @@ jobs:
           ls shots | wc -l
           ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i rafiq || echo "no crash reports"
           for f in ~/Library/Logs/DiagnosticReports/RafiqAlMumin*; do [ -f "$f" ] && head -60 "$f"; done || true
+          xcrun simctl shutdown all >/dev/null 2>&1 || true
+          exit 0
 
       - name: Widget gallery (renders every widget to PNG)
+        timeout-minutes: 15
+        continue-on-error: true
         if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[widgets]') }}
         working-directory: android/ios
         run: |
@@ -146,6 +152,8 @@ jobs:
           mkdir -p shots
           for f in "$C"/Documents/widgets/*.png; do cp "$f" "shots/widget-$(basename "$f")"; done
           ls shots | grep widget || echo "no widget renders"
+          xcrun simctl shutdown all >/dev/null 2>&1 || true
+          exit 0
 
       - name: Publish simulator screenshots to apk-out (ios-screens/)
         if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[widgets]') }}
