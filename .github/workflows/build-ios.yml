@@ -74,7 +74,7 @@ jobs:
           shot() { n=$1; shift; xcrun simctl terminate "$UDID" com.shirazi.rafiq 2>/dev/null || true; xcrun simctl launch "$UDID" com.shirazi.rafiq -onboarded YES "$@" >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot "shots/$n.png" >/dev/null 2>&1 || echo "no shot $n"; }
           xcrun simctl launch "$UDID" com.shirazi.rafiq >/dev/null; sleep 5; xcrun simctl io "$UDID" screenshot shots/onboarding.png
           for t in home library listen prayer more; do shot tab-$t -debugTab $t; done
-          for t in khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints shrine calendar; do shot tool-$t -debugTool $t; done
+          for t in prayer allTools khira weekly asma masoom khums tracker layl hajj ashura qibla muhasaba journey trait amaal qada khatma converter ptable qpoints shrine calendar; do shot tool-$t -debugTool $t; done
           for t in tasbih favorites bookmarks settings about location method; do shot sheet-$t -debugSheet $t; done
           shot reader-kumayl -debugReader mashhura/m-kumayl
           shot reader-quran -debugReader quran/q-001
@@ -85,6 +85,9 @@ jobs:
           shot calendar-personal -debugTool calendar -debugSeedPersonal YES
           xcrun simctl ui "$UDID" appearance dark
           shot dark-home -debugTab home
+          shot dark-library -debugTab library
+          shot dark-more -debugTab more
+          shot dark-prayer -debugTool prayer
           shot dark-tasbih -debugSheet tasbih
           shot dark-reader -debugReader mashhura/m-kumayl
           # iPad
