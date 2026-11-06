@@ -110,8 +110,27 @@ jobs:
           ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i rafiq || echo "no crash reports"
           for f in ~/Library/Logs/DiagnosticReports/RafiqAlMumin*; do [ -f "$f" ] && head -60 "$f"; done || true
 
+      - name: Widget gallery (renders every widget to PNG)
+        if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[widgets]') }}
+        working-directory: android/ios
+        run: |
+          set -x
+          xcodebuild -project RafiqAlMumin.xcodeproj -target WidgetGallery -configuration Debug -sdk iphonesimulator \
+            SYMROOT="$PWD/galbuild" CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E "error:|BUILD" | head -40
+          GAPP=$(find galbuild -maxdepth 2 -name "WidgetGallery.app" | head -1)
+          test -n "$GAPP" || exit 0
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; c=[(k,x) for k,v in d.items() if 'iOS-26' in k for x in v if x['name'].startswith('iPhone') and 'Pro' in x['name'] and 'Max' not in x['name']]; print(sorted(c)[-1][1]['udid'] if c else '')")
+          xcrun simctl boot "$UDID" || true; xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" "$GAPP"
+          xcrun simctl launch "$UDID" com.shirazi.widgetgallery
+          C=$(xcrun simctl get_app_container "$UDID" com.shirazi.widgetgallery data)
+          for i in $(seq 1 30); do [ -f "$C/Documents/widgets/done.txt" ] && break; sleep 2; done
+          mkdir -p shots
+          for f in "$C"/Documents/widgets/*.png; do cp "$f" "shots/widget-$(basename "$f")"; done
+          ls shots | grep widget || echo "no widget renders"
+
       - name: Publish simulator screenshots to apk-out (ios-screens/)
-        if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') }}
+        if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[widgets]') }}
         run: |
           rm -rf out3 && git clone -q --depth 1 -b apk-out "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" out3
           rm -rf out3/ios-screens && mkdir -p out3/ios-screens && cp android/ios/shots/*.png out3/ios-screens/ && cd out3
